@@ -105,10 +105,38 @@ pip install yt-dlp
 
 ### Arrancar el servidor
 
-Con el virtualenv activado:
+Tienes dos formas equivalentes, elige la que prefieras.
 
-```bash
+**Opción A — activando el virtualenv primero** (lo deja activo en la terminal para otros comandos):
+
+Windows (PowerShell):
+```powershell
+.\.venv\Scripts\Activate.ps1
 python server.py
+```
+
+Windows (CMD / Git Bash):
+```bash
+.venv/Scripts/activate
+python server.py
+```
+
+macOS / Linux:
+```bash
+source .venv/bin/activate
+python server.py
+```
+
+**Opción B — ejecutando el Python del venv directamente** (sin activarlo, útil para un one-liner):
+
+Windows:
+```powershell
+.\.venv\Scripts\python.exe server.py
+```
+
+macOS / Linux:
+```bash
+./.venv/bin/python server.py
 ```
 
 Salida esperada:
