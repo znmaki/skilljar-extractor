@@ -1,0 +1,65 @@
+{
+  "manifest_version": 3,
+  "name": "Skilljar → Claude Extractor",
+  "version": "3.0.0",
+  "description": "Extrae lecciones de Skilljar, guarda como .md con subcarpetas por curso, y abre Claude con el contenido.",
+  "permissions": ["activeTab", "scripting", "clipboardWrite", "storage"],
+  "host_permissions": [
+    "*://*.skilljar.com/*",
+    "*://anthropic.skilljar.com/*",
+    "*://academy.anthropic.com/*",
+    "*://*.wistia.com/*",
+    "*://*.wistia.net/*",
+    "*://fast.wistia.net/*",
+    "*://fast.wistia.com/*",
+    "*://*.youtube.com/*",
+    "*://*.youtube-nocookie.com/*",
+    "*://www.youtube.com/*",
+    "*://*.jwplatform.com/*",
+    "*://*.jwpcdn.com/*",
+    "http://localhost:9099/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Skilljar → Claude",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.skilljar.com/*", "*://academy.anthropic.com/*"],
+      "js": ["content-jwplayer.js"],
+      "run_at": "document_start",
+      "all_frames": false
+    },
+    {
+      "matches": ["*://*.skilljar.com/*", "*://academy.anthropic.com/*"],
+      "js": ["content-skilljar.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    },
+    {
+      "matches": ["*://*.wistia.com/*", "*://*.wistia.net/*"],
+      "js": ["content-wistia.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["injected-jwplayer.js", "injected-jw-responder.js", "injected-jw-cues.js", "injected-jw-api.js"],
+      "matches": ["*://*.skilljar.com/*", "*://academy.anthropic.com/*"]
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

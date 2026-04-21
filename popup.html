@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <title>Skilljar → Claude</title>
+  <style>
+    :root {
+      --bg: #faf9f5;
+      --fg: #1f1e1a;
+      --accent: #c15f3c;
+      --accent-h: #a84e2f;
+      --border: #e5e1d8;
+      --muted: #6b6960;
+      --ok: #2d7a3e;
+      --warn: #b8860b;
+      --err: #a83a2f;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 370px; min-height: 340px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg); color: var(--fg);
+    }
+
+    /* ── Top bar ── */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px 0;
+    }
+    .topbar h1 { font-size: 14px; font-weight: 700; }
+    .topbar .subtitle { font-size: 11px; color: var(--muted); }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex; border-bottom: 1px solid var(--border);
+      padding: 0 14px; margin-top: 10px;
+    }
+    .tab {
+      padding: 6px 12px; font-size: 12px; font-weight: 500;
+      color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent;
+      margin-bottom: -1px; transition: all .15s;
+    }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab:hover:not(.active) { color: var(--fg); }
+
+    .panel { display: none; padding: 12px 14px 14px; }
+    .panel.active { display: block; }
+
+    /* ── Server badge ── */
+    #serverBadge {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11px; padding: 5px 8px; border-radius: 5px;
+      margin-bottom: 10px; background: #f0f0ee; border: 1px solid var(--border);
+    }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #ccc; flex-shrink:0; }
+    #serverBadge.online .dot  { background: #3a9e52; }
+    #serverBadge.offline .dot { background: #cc3333; }
+    #serverBadge.checking .dot { animation: blink 1s infinite; }
+    @keyframes blink { 50% { opacity:.2; } }
+
+    /* ── Folder strip ── */
+    .folder-strip {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11px; color: var(--muted); margin-bottom: 10px;
+    }
+    .folder-strip span {
+      flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      background: #efefec; border-radius: 4px; padding: 3px 6px;
+      border: 1px solid var(--border); font-family: monospace;
+    }
+    .folder-strip button {
+      font-size: 11px; padding: 3px 7px; border-radius: 4px;
+      background: #fff; border: 1px solid var(--border); cursor: pointer;
+      white-space: nowrap; color: var(--fg);
+    }
+    .folder-strip button:hover { border-color: var(--accent); }
+
+    /* ── Select & textarea ── */
+    label { font-size: 11px; color: var(--muted); display: block; margin-bottom: 3px; }
+    select, input[type=text], textarea {
+      width: 100%; padding: 6px 8px;
+      border: 1px solid var(--border); border-radius: 4px;
+      font-size: 12px; font-family: inherit; background: #fff;
+      margin-bottom: 8px;
+    }
+    textarea { min-height: 56px; resize: vertical; margin-bottom: 8px; }
+    #customWrap { display: none; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: block; width: 100%;
+      padding: 9px 12px; margin-bottom: 7px;
+      border: 1px solid var(--border); border-radius: 6px;
+      background: #fff; color: var(--fg);
+      font-size: 13px; font-weight: 500; cursor: pointer;
+      text-align: left; transition: all .15s;
+    }
+    .btn:hover { border-color: var(--accent); }
+    .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn.primary:hover { background: var(--accent-h); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .hint { font-size: 10px; color: var(--muted); font-weight: normal; margin-top: 1px; }
+    .btn.primary .hint { color: rgba(255,255,255,.7); }
+
+    hr { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+
+    /* ── Status ── */
+    #status {
+      margin-top: 8px; padding: 7px 9px;
+      font-size: 12px; border-radius: 5px; display: none;
+    }
+    #status.ok   { display:block; background:#e8f5ea; color:var(--ok); }
+    #status.warn { display:block; background:#fdf4e3; color:var(--warn); }
+    #status.err  { display:block; background:#fce8e8; color:var(--err); }
+    #stats { font-size: 10px; color: var(--muted); margin-top: 5px; }
+
+    /* ── Settings panel ── */
+    .settings-row { margin-bottom: 12px; }
+    .settings-row label { margin-bottom: 4px; font-weight: 500; }
+    .settings-row .desc { font-size: 10px; color: var(--muted); margin-top: 2px; }
+    .save-settings {
+      background: var(--accent); color: #fff; border: none;
+      padding: 8px 16px; border-radius: 5px; font-size: 13px;
+      cursor: pointer; font-weight: 500;
+    }
+    .save-settings:hover { background: var(--accent-h); }
+    #settingsMsg { font-size: 11px; color: var(--ok); margin-top: 6px; display:none; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <h1>Skilljar → Claude</h1>
+    <div class="subtitle">Extrae + guarda lección como .md</div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <div class="tab active" data-tab="extract">Extraer</div>
+  <div class="tab" data-tab="settings">⚙ Configuración</div>
+</div>
+
+<!-- ══ EXTRACT PANEL ══ -->
+<div class="panel active" id="panel-extract">
+
+  <div id="serverBadge" class="checking">
+    <div class="dot"></div>
+    <span id="serverText">Verificando servidor…</span>
+  </div>
+
+  <!-- Carpeta activa -->
+  <div class="folder-strip">
+    <span id="folderLabel">No configurada</span>
+    <button id="btnOpenFolder" title="Abrir carpeta">📂 Abrir</button>
+  </div>
+
+  <label for="preset">Qué hace Claude con esto</label>
+  <select id="preset">
+    <option value="raw">Solo extraer contenido (sin prompt)</option>
+    <option value="resumen">Resumen en español</option>
+    <option value="resumen-detalle">Resumen detallado + conceptos clave</option>
+    <option value="examen">Examen de práctica (10 preguntas)</option>
+    <option value="flashcards">Flashcards de repaso</option>
+    <option value="traducir">Traducir al español</option>
+    <option value="custom">Prompt personalizado…</option>
+  </select>
+
+  <div id="customWrap">
+    <textarea id="customPrompt" placeholder="Escribe el prompt que irá antes del contenido…"></textarea>
+  </div>
+
+  <hr/>
+
+  <button class="btn primary" id="btnSaveAndClaude">
+    Guardar .md + Abrir Claude
+    <div class="hint">Guarda en carpeta, copia al portapapeles y abre Claude.ai</div>
+  </button>
+
+  <button class="btn" id="btnSaveOnly">
+    Solo guardar .md
+    <div class="hint">Guarda el archivo sin abrir Claude</div>
+  </button>
+
+  <button class="btn" id="btnCopyOnly">
+    Solo copiar al portapapeles
+    <div class="hint">Funciona sin servidor — útil como fallback</div>
+  </button>
+
+  <div id="status"></div>
+  <div id="stats"></div>
+</div>
+
+<!-- ══ SETTINGS PANEL ══ -->
+<div class="panel" id="panel-settings">
+
+  <div class="settings-row">
+    <label>Carpeta raíz para las notas</label>
+    <input type="text" id="settingsFolder"
+      placeholder="Ej: C:\Users\tu-usuario\Documents\Notas Skilljar"/>
+    <div class="desc">
+      Las lecciones se guardarán en subcarpetas por curso:<br>
+      <code style="font-size:10px">carpeta-raíz / nombre-del-curso / nombre-leccion.md</code>
+    </div>
+  </div>
+
+  <div class="settings-row">
+    <label>Idiomas preferidos para transcript</label>
+    <input type="text" id="settingsLangs" placeholder="en,en-US,es,es-ES"/>
+    <div class="desc">Separados por coma. Se intentan en orden hasta encontrar uno disponible.</div>
+  </div>
+
+  <button class="save-settings" id="btnSaveSettings">Guardar configuración</button>
+  <div id="settingsMsg">✓ Guardado</div>
+
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>
